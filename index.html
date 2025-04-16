@@ -207,14 +207,117 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    .visible {
+      opacity: 0;
+      transform: scale(0.8);
+      animation: popIn 0.4s ease-out forwards;
+    }
     
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    #congrats {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3em;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px 50px;
+      border-radius: 20px;
+      z-index: 9999;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+    
+    .hidden {
+      display: none;
+    }
+    @keyframes flyZigzag {
+      0% {
+        transform: translate(0, 0);
+      }
+      20% {
+        transform: translate(20vw, -20px);
+      }
+      40% {
+        transform: translate(40vw, 20px);
+      }
+      60% {
+        transform: translate(60vw, -20px);
+      }
+      80% {
+        transform: translate(80vw, 20px);
+      }
+      100% {
+        transform: translate(100vw, 0);
+      }
+    }
+    
+    .flying-object {
+      position: fixed;
+      width: 120px;
+      z-index: 999;
+      pointer-events: none;
+    }
+    @keyframes flyAcross {
+      0% {
+        left: -10%; /* Vị trí ban đầu bên ngoài màn hình trái */
+      }
+      100% {
+        left: 110%; /* Vị trí cuối cùng ngoài màn hình phải */
+      }
+    }
+    
+    .flying-object {
+      position: fixed; /* Đảm bảo máy bay cố định trong viewport */
+      top: 20%; /* Đặt vị trí bắt đầu của máy bay */
+      width: 50px; /* Đặt kích thước của máy bay */
+      height: auto;
+      z-index: 10; /* Đảm bảo máy bay xuất hiện phía trên các phần tử khác */
+    }
+    
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<img id="defaultImage" src="./44.jpg" crossOrigin="anonymous">
+  <img id="defaultImage" src="./44.jpg" crossOrigin="anonymous">
+  <div id="notification" style="display: none; color: green; font-size: 16px; margin-top: 10px;"></div>
+  
 <h3>Upload Excel chứa đáp án (ví dụ: "1A 10C 25B"):</h3>
-<input type="file" id="uploadExcel" accept=".xlsx"><br><br>
+<!-- Form nhập tên -->
+<!-- Form nhập tên -->
+<!-- Form nhập tên -->
+<!-- Form nhập tên -->
+<form id="nameForm">
+  <input type="text" id="username" placeholder="Nhập tên của bạn" required>
+  <button type="submit">Lưu tên</button>
+</form>
+
 <!-- Modal lưu ý -->
 <div id="noteModal" class="modal">
   <div class="modal-content">
@@ -224,10 +327,79 @@
       <li>📎 Đáp án theo định dạng: <strong>1A, 2B, 3C..mỗi đáp án nên xuống dòng</strong></li>
       <li>📁 Chỉ dùng <strong>cột đầu tiên</strong> để nhập</li>
       <li>⛔ Khi âm thanh bị lỗi hãy loard lại trang</li>
-
     </ul>
   </div>
 </div>
+
+
+
+
+
+<!-- Input tải lên file Excel -->
+<input type="file" id="uploadExcel" accept=".xlsx" style="display:block"><br><br>
+
+<!-- Thông báo yêu cầu nhập tên -->
+<script>
+  // Hàm kiểm tra nếu tên đã được lưu trong sessionStorage
+  function checkStoredData() {
+    const storedUsername = sessionStorage.getItem('username');
+    const uploadExcelElement = document.getElementById('uploadExcel');
+    const nameFormElement = document.getElementById('nameForm');
+    const notification = document.getElementById('notification');
+    
+    // Kiểm tra xem tên đã được lưu trong sessionStorage
+    if (storedUsername) {
+      // Nếu đã có tên, ẩn form nhập tên và hiển thị input tải lên file
+      nameFormElement.style.display = 'none'; // Ẩn form nhập tên
+      uploadExcelElement.style.display = 'block'; // Hiển thị input tải lên file
+      notification.style.display = 'none'; // Ẩn thông báo yêu cầu nhập tên
+    } else {
+      // Nếu chưa có tên, chỉ hiển thị form nhập tên và ẩn input tải lên file
+      uploadExcelElement.style.display = 'none'; // Ẩn input tải lên file
+      notification.style.display = 'block'; // Hiển thị thông báo yêu cầu nhập tên
+      nameFormElement.style.display = 'block'; // Hiển thị form nhập tên
+    }
+  }
+
+  // Đảm bảo kiểm tra dữ liệu khi DOM đã sẵn sàng
+  document.addEventListener('DOMContentLoaded', function() {
+    checkStoredData(); // Kiểm tra và cập nhật giao diện sau khi trang tải
+  });
+
+  // Xử lý form submit
+  document.getElementById('nameForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Ngừng hành động mặc định của form (reload trang)
+
+    const username = document.getElementById('username').value.trim();
+    
+    if (username) {
+      // Lưu tên vào sessionStorage
+      sessionStorage.setItem('username', username); // Lưu tên vào sessionStorage
+      
+      // Thêm thông báo thành công
+      const notificationElement = document.getElementById('notification');
+      notificationElement.innerHTML = 'Chào mừng bạn, ' + username; // Thêm tên vào thông báo
+      notificationElement.style.color = 'green'; // Đổi màu thông báo thành xanh
+      
+      // Kiểm tra lại và cập nhật giao diện
+      checkStoredData(); // Gọi lại để cập nhật giao diện
+    } else {
+      // Nếu chưa nhập tên, hiển thị thông báo yêu cầu nhập tên
+      const notificationElement = document.getElementById('notification');
+      notificationElement.style.display = 'block'; // Hiển thị thông báo
+    }
+  });
+</script>
+
+
+
+
+
+<img id="defaultImage" src="./44.jpg" crossOrigin="anonymous">
+
+<div id="notification" style="display: none; color: green; font-size: 16px; margin-top: 10px;"></div>
+
+
 <button id="openNoteModal" style="
   position: fixed;
   top: 20px;
@@ -246,6 +418,7 @@
 <div class="container">
   <div class="grid" id="result"></div>
 </div>
+<div id="congrats" class="hidden">🎉 Chúc mừng bạn đã hoàn thành! 🎉</div>
 
 <!-- SheetJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -253,14 +426,77 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
+  function randomizeImage() {
+    const imageNames = ['44.jpg', '55.jpg', '66.jpg', '77.jpg', '88.jpg', '99.jpg','10.jpg'];
+    const randomIndex = Math.floor(Math.random() * imageNames.length);
+    const imgElement = document.getElementById('defaultImage');
+
+    imgElement.src = `./${imageNames[randomIndex]}`;
+
+    // Lưu ảnh vào sessionStorage
+    sessionStorage.setItem('lastImage', imageNames[randomIndex]);
+
+    // Hiển thị thông báo
+    const notification = document.getElementById('notification');
+    //notification.textContent = `Đã thay đổi ảnh thành: ${imageNames[randomIndex]}`; -->
+    notification.style.display = 'block';
+  }
+
+  // Hàm kiểm tra nếu có ảnh và tên đã lưu trong sessionStorage
+  function checkStoredData() {
+    const storedUsername = sessionStorage.getItem('username');
+    const storedImage = sessionStorage.getItem('lastImage');
+
+    // Kiểm tra tên đã lưu
+    if (storedUsername) {
+      // Nếu đã có tên, ẩn form và hiển thị thông báo
+      const form = document.getElementById('nameForm');
+      form.style.display = 'none'; // Ẩn form
+
+      // Hiển thị thông báo về tên đã lưu
+      const notification = document.getElementById('notification');
+      notification.textContent = `Chào ${storedUsername}!`;
+      notification.style.display = 'block'; // Hiển thị thông báo
+    }
+
+    // Nếu ảnh đã lưu, hiển thị lại ảnh đó
+    if (storedImage) {
+      const imgElement = document.getElementById('defaultImage');
+      imgElement.src = `./${storedImage}`; // Set lại ảnh đã lưu
+    } else {
+      randomizeImage(); // Nếu chưa có ảnh, random ảnh mới
+    }
+  }
+
+  // Gọi hàm checkStoredData khi trang tải
+  window.onload = checkStoredData;
+
+  // Xử lý form submit
+  document.getElementById('nameForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Ngừng hành động mặc định của form (reload trang)
+
+    const username = document.getElementById('username').value.trim();
+    
+    if (username) {
+      sessionStorage.setItem('username', username); // Lưu tên vào sessionStorage
+      alert(`Tên của bạn (${username}) đã được lưu!`);
+      // Ẩn form và thông báo sau khi nhập xong
+      const form = document.getElementById('nameForm');
+      const notification = document.getElementById('notification');
+      form.style.display = 'none'; // Ẩn form
+      notification.textContent = `Tên của bạn ${username} đã được lưu!`;
+      notification.style.display = 'block'; // Hiển thị thông báo thành công
+    }
+  });
   document.addEventListener("DOMContentLoaded", function () {
     const answerMap = new Map();
     const soSanh = [
- "1D", "2B", "3B", "4A", "5A", "6B", "7B", "8A", "9A", "10A",
-"11B", "12B", "13C", "14B", "15A", "16B", "17A", "18B", "19C", "20D",
-"21B", "22C", "23B", "24B", "25A", "26B", "27C", "28B", "29D", "30D",
-"31B", "32B", "33D"
-    ];
+    "1A", "2C", "3A", "4C", "5C", "6C", "7B", "8B", "9C", "10B",
+    "11B", "12B", "13B", "14C", "15A", "16C", "17C", "18C", "19C", "20C",
+    "21C", "22A", "23C", "24B", "25C", "26B", "27C", "28B", "29C", "30A",
+    "31C", "32B", "33C"
+  ];
+  
     const uploadInput = document.getElementById('uploadExcel');
     const noteModal = document.getElementById('noteModal');
     const closeModal = document.querySelector('.close');
@@ -394,6 +630,7 @@
        alert('🎉 Chúc mừng! Bạn đã hoàn thành thử thách!');
        playVictoryMusic();
        hienDocLap();
+       startEffects();
      } else if (correctAnswers > 0 && correctAnswers < 33) {
       anDocLap();
     
@@ -408,7 +645,32 @@
          stopAllEffects();
        }
      }
-   
+
+
+     function startEffects() {
+      // Hiện bảng chúc mừng
+      const congrats = document.getElementById('congrats');
+      congrats.classList.remove('hidden');
+    
+      // Confetti đơn giản
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+      });
+    
+      // Phát âm thanh
+      const audio = new Audio('success.mp3');
+      audio.play();
+    
+      // Ẩn sau 2 giây
+      setTimeout(() => {
+        congrats.classList.add('hidden');
+      }, 2000);
+    }
+    
+    
+
    
 function hienDocLap() {
   const doclapElement = document.getElementById("doclap");
@@ -541,28 +803,63 @@ function stopAllEffects() {
       }, 5000);
     }
     
-// Hàm khởi tạo máy bay mới và thêm hiệu ứng
-function createAirplane(id) {
-  // Kiểm tra xem số câu trả lời đúng có bằng 33 hay không
-  if (correctAnswers === 33) {
-    const airplane = document.createElement("img");
-    airplane.src = "./—Pngtree—jet fighter illustration_8476956.png";
-    airplane.className = "flying-object";
-    airplane.id = id;
+    let isCreatingAirplanes = false; // Biến theo dõi việc tạo máy bay
 
-    // Thiết lập animation ngay khi máy bay được tạo
-    airplane.style.animation = 'flyAcross 10s linear forwards'; // Thêm hiệu ứng bay ngay khi tạo
+    function createAirplane(id = "airplane", count = 1) {
+      if (correctAnswers !== 33 || isCreatingAirplanes) return;
+    
+      isCreatingAirplanes = true; // Đánh dấu bắt đầu quá trình tạo máy bay
+      
+      // Tạo ngẫu nhiên số lượng máy bay (3 hoặc 4 máy bay)
+      const randomCount = Math.floor(Math.random() * 2) + 3; // Số máy bay ngẫu nhiên từ 3 đến 4
+    
+      for (let i = 0; i < randomCount; i++) {
+        const airplane = document.createElement("img");
+        airplane.src = "./—Pngtree—jet fighter illustration_8476956.png";
+        airplane.className = "flying-object";
+        
+        // Nếu count > 1, thêm số thứ tự vào id, còn lại giữ nguyên
+        airplane.id = count > 1 ? `${id}-${i}` : id;
+        
+        // Máy bay sát nhau nếu count > 1, còn lại giữ nguyên top
+        const topOffset = 20 - i * 1.2;
+        airplane.style.top = `${topOffset}%`;
+    
+        // Vị trí ngẫu nhiên trên trục x (giới hạn trong phạm vi cửa sổ)
+        const randomLeft = Math.floor(Math.random() * 100) - 50; // Tạo vị trí ngẫu nhiên từ -50% đến 50%
+        airplane.style.left = `${randomLeft}%`;
+        
+        // Hiệu ứng bay từ trái sang phải (kéo dài qua màn hình)
+        const randomAnimationDuration = Math.floor(Math.random() * 5) + 5; // Từ 5s đến 10s
+        airplane.style.animation = `flyAcross ${randomAnimationDuration}s linear forwards`;
+        airplane.style.animationDelay = `${i * 0.15}s`; // Delay nhỏ để các máy bay bay gần nhau
+    
+        document.body.appendChild(airplane);
+    
+        // Bắt đầu pháo hoa cho từng chiếc nếu muốn
+        setTimeout(() => launchFireworks(airplane), i * 150);
+    
+        // Sau khi máy bay hoàn thành animation, xóa máy bay và tạo lại nhóm mới
+        airplane.addEventListener("animationend", () => {
+          airplane.remove(); // Xóa máy bay đã bay hết
+        });
+      }
+    
+      // Tạo nhóm mới mỗi 3 giây sau khi tất cả máy bay đã bay hết
+      setTimeout(() => {
+        isCreatingAirplanes = false; // Đánh dấu kết thúc quá trình tạo máy bay
+        createAirplane(id, count); // Tạo lại nhóm máy bay mới
+      }, 3000); // Thời gian tạo nhóm mới (sau khi máy bay đã bay hết)
+    }
+    
+    // CSS cho hiệu ứng `flyAcross`
+   
+    
+  
 
-    document.body.appendChild(airplane);
-
-    // Gọi hàm để bắt đầu hiệu ứng pháo hoa
-    launchFireworks(airplane);
-
-    return airplane;
-  }
-  // Nếu không đạt 33 câu trả lời đúng, không làm gì
-  return null;
-}
+  
+  
+  
 
 // Hàm tạo hiệu ứng pháo hoa
 
