@@ -63,25 +63,10 @@
       100% { transform: translateX(120vw); }
     }
 
-    .flying-tank {
-      position: fixed;
-      bottom: 0;
-      right: -200px;
-      width: 150px;
-      height: auto;
-      z-index: 9999;
-      pointer-events: none;
-      animation: tankMoveLeft 15s linear infinite;
-    }
-    
-    @keyframes tankMoveLeft {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-120vw); }
-    }
-    
-
+ 
     .tank-wrapper {
-      position: relative; /* Đảm bảo tank-wrapper có position: relative */
+      position: relative; 
+      overflow: visible;/* Đảm bảo tank-wrapper có position: relative */
       bottom: 50px;
       left: 100px;
       width: 150px; /* Kích thước mới của tank-wrapper */
@@ -90,6 +75,13 @@
       display: flex;
       align-items: center; /* Căn chỉnh phần tử con theo chiều dọc */
     }
+    @keyframes tankMoveLeft {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-120vw); }
+    }
+    
+
+  
     
     .fire {
       position: absolute;
@@ -122,7 +114,7 @@
     .flying-doclap {
       position: fixed;
       bottom: 20px;
-      left: 20px;
+      right: 20px;
       width: 150px;
       height: auto;
       z-index: 1000;
@@ -131,7 +123,7 @@
     .doclap-wrapper {
       position: fixed;
       bottom: 20px;
-      left: 20px;
+      right: 20px;
       width: 150px;
       height: auto;
       z-index: 1000;
@@ -268,14 +260,26 @@
       z-index: 999;
       pointer-events: none;
     }
-    @keyframes flyAcross {
-      0% {
-        left: -10%; /* Vị trí ban đầu bên ngoài màn hình trái */
+    @keyframes tankMoveRight {
+      from {
+        left: -200px;
       }
-      100% {
-        left: 110%; /* Vị trí cuối cùng ngoài màn hình phải */
+      to {
+        left: 100vw; /* chạy ra khỏi màn hình bên phải */
       }
     }
+    .flying-tank {
+      position: fixed; 
+      bottom: 0;
+      right: -200px;
+      width: 150px;
+      height: auto;
+      z-index: 9999;
+      pointer-events: none;
+      animation: tankMoveRight  15s linear infinite;
+      transform: scaleX(-1) !important; /* Lật ngược xe tăng */
+    }
+        
     
     .flying-object {
       position: fixed; /* Đảm bảo máy bay cố định trong viewport */
@@ -301,9 +305,24 @@
       font-size: 16px;
       cursor: pointer;
     }
+    
   </style>
 </head>
-<body>
+<body style="
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  overflow: hidden;
+  
+  
+">
+
+
+
 
   <img id="defaultImage" src="./44.jpg" crossOrigin="anonymous">
   <div id="notification" style="display: none; color: green; font-size: 16px; margin-top: 10px;"></div>
@@ -327,7 +346,6 @@
       <li>📎 Đáp án theo định dạng: <strong>1A, 2B, 3C..mỗi đáp án nên xuống dòng</strong></li>
       <li>📁 Chỉ dùng <strong>cột đầu tiên</strong> để nhập</li>
       <li>⛔ Khi âm thanh bị lỗi hãy loard lại trang</li>
-      <li>🖼️Có dưới 100 bức ảnh cần được giải mã</li>
     </ul>
   </div>
 </div>
@@ -428,11 +446,7 @@
 
 <script>
   function randomizeImage() {
-    const imageNames =  [
-  '44.jpg', '55.jpg', '66.jpg', '77.jpg', '88.jpg', '99.jpg', '10.jpg',
-  '11.jpg', '12.jpg', '13.jpg', '14.jpg', '15.jpg', '16.jpg', '17.jpg', '18.jpg', '19.jpg', '20.jpg',
-  '21.jpg', '22.jpg', '23.jpg', '24.jpg', '25.jpg', '26.jpg', '27.jpg', '28.jpg', '29.jpg', '30.jpg'
-];
+    const imageNames = ['44.jpg', '55.jpg', '66.jpg', '77.jpg', '88.jpg', '99.jpg','10.jpg'];
     const randomIndex = Math.floor(Math.random() * imageNames.length);
     const imgElement = document.getElementById('defaultImage');
 
@@ -677,18 +691,31 @@
     
 
    
-function hienDocLap() {
-  const doclapElement = document.getElementById("doclap");
-  const flyingImg = document.querySelector(".flying-doclap-img");
-
-  if (doclapElement) {
-    doclapElement.style.display = "block";
-  }
-
-  if (flyingImg) {
-    flyingImg.style.display = "block";
-  }
-}
+    function hienDocLap() {
+      const doclapElement = document.getElementById("doclap");
+      const flyingImg = document.querySelector(".flying-doclap-img");
+    
+      // Hiện lại background ảnh nền
+      document.body.style.backgroundImage = "url('./nen.jpg')";
+    
+      // 🌟 Gọi hiệu ứng confetti canvas
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#ff0000', '#00ff00', '#0000ff']
+      });
+    
+      if (doclapElement) {
+        doclapElement.style.display = "block";
+      }
+    
+      if (flyingImg) {
+        flyingImg.style.display = "block";
+      }
+    }
+    
+    
 function anDocLap() {
   const doclapElement = document.getElementById("doclap");
   const flyingImg = document.querySelector(".flying-doclap-img");
@@ -954,10 +981,12 @@ setInterval(createTank, 9000);     // Mỗi 9 giây có 1 xe tăng
 </script>
 
 <img src="./—Pngtree—jet fighter illustration_8476956.png" class="flying-object" id="airplane" style="display: none;" />
-<div class="tank-wrapper" id="tank">
-  <img src="" class="flying-tank" />
-  <div class="fire"></div> <!-- Lửa đã được di chuyển vào đây -->
+<div class="tank-wrapper">
+  <img src="" class="flying-tank">
 </div>
+
+
+
 
 <div class="doclap-wrapper" id="doclap">
   <img src="./đinhoclap.png" class="flying-doclap-img" />
