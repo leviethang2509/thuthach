@@ -1,3 +1,193 @@
-<!-- Thay thế hoàn toàn hai dòng này -->
-<img src="https://i.imgur.com/nj6nKUt.png" class="flying-object airplane" style="top: 15%;" id="airplane" />
-<img src="https://i.imgur.com/B4a0aYv.png" class="flying-object helicopter" style="top: 30%;" id="helicopter" />
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bản đồ Việt Nam 3D</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: Arial, sans-serif;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.z = 300;
+
+    const group = new THREE.Group();
+    group.scale.set(0.6, 0.6, 0.6); // Thu nhỏ bản đồ
+    scene.add(group);
+
+    const imageNames = ['110.jpg', '111.jpg', '112.jpg', '113.jpg', '114.jpg', '115.jpg', '116.jpg', '117.jpg', '118.jpg', '119.jpg', '120.jpg'];
+
+
+
+    let existingTargets = [];
+    let currentIndex = 0;  // Biến này sẽ dùng để xác định ảnh hiện tại
+
+    function loadImage() {
+        const imageName = imageNames[currentIndex];
+        const imgPath = `${imageName}`;
+        const img = new Image();
+      
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const width = 320;
+          const height = 480;
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+      
+          ctx.drawImage(img, 0, 0, width, height);
+          const original = ctx.getImageData(0, 0, width, height);
+          const originalData = original.data;
+      
+          const bw = ctx.getImageData(0, 0, width, height);
+          const data = bw.data;
+      
+          for (let i = 0; i < data.length; i += 4) {
+            const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const v = brightness < 128 ? 0 : 255;
+            data[i] = data[i + 1] = data[i + 2] = v;
+          }
+      
+          const newTargets = [];
+      
+          for (let y = 0; y < height; y += 4) {
+            for (let x = 0; x < width; x += 4) {
+              const i = (y * width + x) * 4;
+              if (data[i] === 0) {
+                const targetX = x - width / 2;
+                const targetY = height / 2 - y;
+                const targetZ = 0;
+                const targetKey = `${targetX},${targetY},${targetZ}`;
+                newTargets.push(targetKey);
+      
+                const existing = group.children.find(dot => {
+                  const t = dot.userData.target;
+                  return Math.abs(t.x - targetX) < 1 && Math.abs(t.y - targetY) < 1;
+                });
+      
+                if (existing) {
+                  const r = originalData[i];
+                  const g = originalData[i + 1];
+                  const b = originalData[i + 2];
+                  existing.material.color.setRGB(r / 255, g / 255, b / 255);
+                } else {
+                  const r = originalData[i];
+                  const g = originalData[i + 1];
+                  const b = originalData[i + 2];
+                  const color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
+                  const material = new THREE.MeshBasicMaterial({ color });
+                  const geometry = new THREE.SphereGeometry(1.2, 4, 4);
+                  const dot = new THREE.Mesh(geometry, material);
+      
+                  dot.position.set(
+                    Math.random() * 400 - 200,
+                    Math.random() * 400 - 200,
+                    Math.random() * -400 - 200
+                  );
+      
+                  dot.userData.target = new THREE.Vector3(targetX, targetY, targetZ);
+                  group.add(dot);
+                }
+              }
+            }
+          }
+      
+      // Xóa các dot không còn tồn tại trong ảnh mới
+const toRemove = group.children.filter(dot => {
+    const t = dot.userData.target;
+    const key = `${t.x},${t.y},${t.z}`;
+    return !newTargets.includes(key);
+  });
+  
+  toRemove.forEach(dot => {
+    group.remove(dot);
+    dot.geometry.dispose();
+    dot.material.dispose();
+  });
+  
+  group.children = group.children.filter(dot => {
+    const t = dot.userData.target;
+    const key = `${t.x},${t.y},${t.z}`;
+    return newTargets.includes(key);
+  });
+  
+          existingTargets = newTargets;
+      
+          // ✅ Chỉ sau khi load xong mới hẹn ảnh mới
+          currentIndex = (currentIndex + 1) % imageNames.length;
+          setTimeout(loadImage, 20000);
+        };
+      
+        img.src = imgPath;
+      }
+      
+      // Bắt đầu chuỗi hiển thị ảnh
+      loadImage();
+      
+    // 🌟 Tạo bầu trời sao
+    const starsGeometry = new THREE.BufferGeometry();
+    const starCount = 2000;
+    const positions = [];
+
+    for (let i = 0; i < starCount; i++) {
+      const x = (Math.random() - 0.5) * 2000;
+      const y = (Math.random() - 0.5) * 2000;
+      const z = (Math.random() - 0.5) * 2000;
+      positions.push(x, y, z);
+    }
+
+    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Di chuyển các điểm về vị trí mục tiêu
+      group.children.forEach(dot => {
+        const pos = dot.position;
+        const target = dot.userData.target;
+        pos.x += (target.x - pos.x) * 0.05;
+        pos.y += (target.y - pos.y) * 0.05;
+        pos.z += (target.z - pos.z) * 0.05;
+      });
+
+      group.rotation.y += 0.01;
+      stars.rotation.y += 0.0005; // 🌌 Quay nhẹ bầu trời sao
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Responsive
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
